@@ -5,9 +5,10 @@
 #include <iomanip>
 #include <cstdlib>
 #include <new>
-#include <vector>
+
 
 using namespace std;
+
 
 
 /*************matrix class*************/
@@ -15,7 +16,8 @@ template<class T>
 class My2DMatrix
 {
 private:
-   vector<vector<T>> myMatrix;
+   //vector<vector<T>> myMatrix;
+   T **myMatrix;
    int rowSize;
    int colSize;
    int arraySize;
@@ -26,24 +28,16 @@ public:
 
     //constructor
     My2DMatrix(int sizeOfRow, int sizeOfCol);
-
     //copy constructor
     My2DMatrix(const My2DMatrix &);
 
     class MemoryError
-    {
-
-    };
-
+    {   };
     class SubscriptError
-    {
-
-    };
-
+    {    };
     class MatrixDimensionError
-    {
+    {   };
 
-    };
     int getRowSize()
     {   return rowSize; }
 
@@ -57,33 +51,37 @@ public:
     {   return myMatrix;  }
 
     T getElementAt(int row, int col);
-
     void putElementAt(int row, int col, T value);
-
     void showArray();
-
     T sumArray();
-
     T sumRow(int row);
-
     T sumCol(int col);
 
-    My2DMatrix<T> operator +(My2DMatrix<T> &);
+    template<class T2>
+    My2DMatrix<T> operator +(My2DMatrix<T2> &right);
 
-    void operator =(const My2DMatrix<T> &);
+    template<class T2>
+    void operator =(My2DMatrix<T2>);
+    void operator =(My2DMatrix);
 
-    My2DMatrix operator -(My2DMatrix &);
+    template<class T2>
+    My2DMatrix operator -(My2DMatrix<T2> &right);
+    My2DMatrix operator -(My2DMatrix &right);
 
 
-    My2DMatrix operator *(My2DMatrix &);
-
+    template<class T2>
+    My2DMatrix operator *(My2DMatrix<T2> &right);
+    My2DMatrix operator *(My2DMatrix &right);
     ~My2DMatrix();
+
+
+
+
 
 
 };
 
 
-/*************constructor definition***************/
 template<class T>
 My2DMatrix<T>::My2DMatrix(int sizeOfRow, int sizeOfCol)
 {
@@ -91,33 +89,59 @@ My2DMatrix<T>::My2DMatrix(int sizeOfRow, int sizeOfCol)
     colSize = sizeOfCol;
     arraySize = rowSize * colSize;
 
-    vector<vector<T>>items(rowSize, vector<T>(colSize));
-    myMatrix = items;
+    //vector<vector<T>>items(rowSize, vector<T>(colSize));
+    //myMatrix = items;
+
+    try
+    {
+        myMatrix = new T*[rowSize];
+        for(int i = 0; i<rowSize; i++)
+        {
+            myMatrix[i]=new T[colSize];
+        }
+    }
+    catch(bad_alloc)
+    {
+        cout<<"Error: Insufficient Memory\n";
+    }
+
+
+    for(int i = 0; i < rowSize; i++)
+    {
+        for(int j = 0; j < colSize; j++)
+        {
+            myMatrix[i][j] = 0;
+        }
+    }
+
 
 }
 
+
+
 /**************copy constructor*************/
+
 template<class T>
 My2DMatrix<T>::My2DMatrix(const My2DMatrix &obj)
 {
-    if(obj.myMatrix.size() == 0)
+    if(arraySize == 0);
         throw MemoryError();
+
     rowSize = obj.rowSize;
     colSize = obj.colSize;
     arraySize = obj.arraySize;
     myMatrix = obj.myMatrix;
 
-
 }
+
 /********************Destructor**********/
 template<class T>
 My2DMatrix<T>::~My2DMatrix()
 {
+    for(int i = 0; i < rowSize; i++)
+        delete myMatrix[i];
+    delete myMatrix;
 }
-
-
-
-
 
 
 /********Get Element At Location**************/
@@ -126,20 +150,28 @@ T My2DMatrix<T>:: getElementAt(int row, int col)
 {
     if(row < 0 || row >= rowSize || col < 0 || col >= colSize)
         throw SubscriptError();
+
     return myMatrix[row][col];
+
 }
 
 
+
+
+
 /***********Put Element At Location***************/
+
 template<class T>
 void My2DMatrix<T>::putElementAt(int row, int col, T value)
 {
     if(row < 0 || row >= rowSize || col < 0 || col >= colSize)
         throw SubscriptError();
-    myMatrix[row][col] = value;
 
+    myMatrix[row][col] = value;
 }
+
 /**************Display Matrix***************/
+
 template<class T>
 void My2DMatrix<T>::showArray()
 {
@@ -151,11 +183,17 @@ void My2DMatrix<T>::showArray()
         }
         cout <<endl;
     }
+
 }
 
+
+
 /*************Sum Array******************/
+
 template <class T>
+
 T My2DMatrix<T>::sumArray()
+
 {
     T total = 0;
     for(int row = 0; row < rowSize; row++)
@@ -166,6 +204,8 @@ T My2DMatrix<T>::sumArray()
 
     return total;
 }
+
+
 
 /********* Sum Row ***************/
 template <class T>
@@ -178,6 +218,8 @@ T My2DMatrix<T>::sumRow(int row)
     return total;
 }
 
+
+
 /********* Sum Col ***************/
 template <class T>
 T My2DMatrix<T>::sumCol(int col)
@@ -189,18 +231,17 @@ T My2DMatrix<T>::sumCol(int col)
     return total;
 }
 
+
+
 /************Overloaded Addition************/
 template <class T>
-My2DMatrix<T> My2DMatrix<T>::operator +(My2DMatrix<T> &right)
+template <class T2>
+My2DMatrix<T> My2DMatrix<T>::operator +(My2DMatrix<T2> &right)
 {
     if (rowSize != right.getRowSize() || colSize != right.getColSize())
         throw MatrixDimensionError();
-showArray();
-cout<< "\n plus\n";
-right.showArray();
-cout<<"\nequals\n";
 
-    My2DMatrix<double> temp(rowSize, colSize);
+    My2DMatrix<T> temp(rowSize, colSize);
 
     T tempVal;
     for(int row = 0; row < rowSize; row++)
@@ -212,103 +253,167 @@ cout<<"\nequals\n";
         }
     }
 
-    cout<< "display result "<<endl;
-        for(int x = 0; x < temp.getRowSize(); x++)
-    {
-        for(int y = 0; y < temp.getColSize(); y++)
-        {
-            cout<<setw(colSize)<< temp.getElementAt(x, y) << " ";
-        }
-        cout <<endl;
-    }
     return temp;
-
 }
 
+
+/****************Overloaded = T2 Parameter*************/
 template <class T>
-void My2DMatrix<T>::operator =(const My2DMatrix<T> &right)
-{
-//    if (rowSize != right.getRowSize() || colSize != right.getColSize())
-       // throw MatrixDimensionError();
-
-        for(int row = 0; row < rowSize; row++)
-    {
-        for(int col = 0; col < colSize; col++)
-        {
-            myMatrix[row][col] = getElementAt(row, col);
-        }
-    }
-
-}
-
-/************Overloaded Subtraction************/
-template <class T>
-My2DMatrix<T> My2DMatrix<T>::operator -(My2DMatrix<T> &right)
+template <class T2>
+void My2DMatrix<T>::operator =(My2DMatrix<T2> right)
 {
   if (rowSize != right.getRowSize() || colSize != right.getColSize())
         throw MatrixDimensionError();
+
+    for(int row = 0; row < rowSize; row++)
+    {
+        for(int col = 0; col < colSize; col++)
+        {
+            myMatrix[row][col] = right.getElementAt(row, col);
+        }
+    }
+
+}
+
+/****************Overloaded = T Parameter*************/
+template <class T>
+void My2DMatrix<T>::operator =(My2DMatrix<T> right)
+{
+  if (rowSize != right.getRowSize() || colSize != right.getColSize())
+        throw MatrixDimensionError();
+
+    for(int row = 0; row < rowSize; row++)
+    {
+        for(int col = 0; col < colSize; col++)
+        {
+            myMatrix[row][col] = right.getElementAt(row, col);
+        }
+    }
+
+}
+
+
+
+/************Overloaded Subtraction T2 Parameter************/
+
+template <class T>
+template <class T2>
+My2DMatrix<T> My2DMatrix<T>::operator -(My2DMatrix<T2> &right)
+
+{
+ if (rowSize != right.getRowSize() || colSize != right.getColSize())
+        throw MatrixDimensionError();
+
     My2DMatrix<T> temp(rowSize, colSize);
+
     T tempVal;
     for(int row = 0; row < rowSize; row++)
     {
         for(int col = 0; col < colSize; col++)
         {
-            tempVal = myMatrix[row][col] - right.getElementAt(row, col);
+            tempVal = myMatrix[row][col]-right.getElementAt(row, col);
             temp.putElementAt(row, col, tempVal);
         }
     }
 
-        cout<< "display result "<<endl;
-        for(int x = 0; x < temp.getRowSize(); x++)
-    {
-        for(int y = 0; y < temp.getColSize(); y++)
-        {
-            cout<<setw(colSize)<< temp.getElementAt(x, y) << " ";
-        }
-        cout <<endl;
-    }
 
     return temp;
-
 }
 
-/************Overloaded Multiplication************/
+
+/************Overloaded Subtraction T Parameter************/
+
+template <class T>
+My2DMatrix<T> My2DMatrix<T>::operator -(My2DMatrix<T> &right)
+
+{
+ if (rowSize != right.getRowSize() || colSize != right.getColSize())
+        throw MatrixDimensionError();
+
+    My2DMatrix<T> temp(rowSize, colSize);
+
+    T tempVal;
+    for(int row = 0; row < rowSize; row++)
+    {
+        for(int col = 0; col < colSize; col++)
+        {
+            tempVal = myMatrix[row][col]-right.getElementAt(row, col);
+            temp.putElementAt(row, col, tempVal);
+        }
+    }
+
+
+    return temp;
+}
+
+/************Overloaded Multiplication T2 Parameter ************/
+template <class T>
+template <class T2>
+My2DMatrix<T> My2DMatrix<T>::operator *(My2DMatrix<T2> &right)
+{
+    if(colSize != right.getRowSize())
+        throw MatrixDimensionError();
+
+    int tempRow = rowSize;
+    int tempCol = right.getColSize();
+
+    T tempVal = 0;
+    My2DMatrix<T> temp(tempRow, tempCol);
+    for(int row = 0; row < rowSize; row++)
+    {
+        for(int col = 0; col < right.getColSize(); col++)
+        {
+        //Multiply the row of A by the column of B to get the product
+           for(int inner = 0; inner < colSize; inner++)
+           {
+
+               tempVal += myMatrix[row][inner] * right.getElementAt(inner, col);
+
+
+           }
+           temp.putElementAt(row, col, tempVal);
+           tempVal = 0;
+
+        }
+    }
+
+
+    return temp;
+}
+
+/************Overloaded Multiplication T Parameter************/
 template <class T>
 My2DMatrix<T> My2DMatrix<T>::operator *(My2DMatrix<T> &right)
 {
     if(colSize != right.getRowSize())
         throw MatrixDimensionError();
 
-    T tempVal;
-    My2DMatrix<T> temp(rowSize, colSize);
+    int tempRow = rowSize;
+    int tempCol = right.getColSize();
 
+    T tempVal = 0;
+    My2DMatrix<T> temp(tempRow, tempCol);
     for(int row = 0; row < rowSize; row++)
     {
-        for(int col = 0; col < colSize; col++)
+        for(int col = 0; col < right.getColSize(); col++)
         {
-            //Multiply the row of A by the column of B to get the product
+        //Multiply the row of A by the column of B to get the product
            for(int inner = 0; inner < colSize; inner++)
-                tempVal = ((myMatrix[row][inner] * right.getElementAt(inner, row)));
-            temp.putElementAt(row, col, tempVal);
+           {
+
+               tempVal += myMatrix[row][inner] * right.getElementAt(inner, col);
+
+
+           }
+           temp.putElementAt(row, col, tempVal);
+           tempVal = 0;
 
         }
     }
 
-    cout<< "display result "<<endl;
-        for(int x = 0; x < temp.getRowSize(); x++)
-    {
-        for(int y = 0; y < temp.getColSize(); y++)
-        {
-            cout<<setw(colSize)<< temp.getElementAt(x, y) << " ";
-        }
-        cout <<endl;
 
     return temp;
-
 }
-
-
-
 
 
 #endif // MY2DMATRIX_H_INCLUDED
